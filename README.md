@@ -1,6 +1,6 @@
-# iPhone → Mac File Transfer
+# iPhone → Mac → HDD  File Transfer
 
-A terminal-based file transfer tool that lets you browse and copy files from your iPhone to your Mac or any external HDD — no iTunes, no Finder, no GUI required.
+A terminal and Web UI based file transfer tool that lets you browse and copy files from your iPhone to your Mac or any external HDD — no iTunes, no Finder, no GUI required.
 
 ---
 
