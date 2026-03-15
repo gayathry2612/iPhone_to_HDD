@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>iPhone Transfer</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────────────────────── -->
+<header class="header">
+  <div class="logo">📱 iPhone Transfer</div>
+  <div id="device-status" class="device-status"></div>
+  <button id="header-reconnect-btn" class="btn btn-sm hidden">Reconnect</button>
+</header>
+
+<!-- ── Connection screen ────────────────────────────────────────────────────── -->
+<div id="connection-screen" class="connection-screen">
+  <div class="connect-card">
+    <div class="connect-icon">📱</div>
+    <h2>Connect your iPhone</h2>
+    <p class="connect-desc">
+      Plug in your iPhone via USB, unlock it, and tap
+      <strong>Trust This Computer</strong> when prompted.
+    </p>
+    <button id="connect-btn" class="btn btn-primary btn-lg">
+      🔌 Connect iPhone
+    </button>
+    <p id="connect-error" class="error-text"></p>
+    <div class="connect-hints">
+      <p class="hint-title">Accessible folders</p>
+      <div class="hint-chips">
+        <span class="chip">📸 /DCIM  (all photos &amp; videos)</span>
+        <span class="chip">📚 /Books</span>
+        <span class="chip">📁 App documents (iTunes File Sharing)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Main screen ──────────────────────────────────────────────────────────── -->
+<div id="main-screen" class="hidden">
+
+  <div class="panels">
+
+    <!-- iPhone panel -->
+    <div class="panel" id="iphone-panel">
+      <div class="panel-header">
+        <span class="panel-title">📱 iPhone</span>
+        <div class="spacer"></div>
+        <button id="select-dcim-btn" class="btn btn-sm" title="Select all photos & videos">☑ All Photos</button>
+        <button id="clear-btn"       class="btn btn-sm" title="Clear selection">✕ Clear</button>
+      </div>
+      <div id="iphone-tree" class="tree"></div>
+    </div>
+
+    <!-- Destination panel -->
+    <div class="panel" id="dest-panel">
+      <div class="panel-header">
+        <span class="panel-title">💻 Destination</span>
+        <span id="dest-badge" class="badge badge-success hidden">Selected</span>
+      </div>
+      <div id="shortcuts-bar" class="shortcuts"></div>
+      <div id="dest-breadcrumb" class="breadcrumb">Navigate below and click a folder to select it as destination</div>
+      <div id="dest-tree" class="tree"></div>
+    </div>
+
+  </div><!-- .panels -->
+
+  <!-- Transfer bar -->
+  <div class="transfer-bar">
+    <div id="selection-info" class="sel-info"></div>
+    <div id="dest-label"     class="dest-label muted">No destination selected</div>
+    <div class="spacer"></div>
+    <label class="conflict-label">
+      On conflict:
+      <select id="conflict-policy">
+        <option value="skip">Skip existing</option>
+        <option value="overwrite">Overwrite</option>
+        <option value="rename">Rename (keep both)</option>
+      </select>
+    </label>
+    <button id="transfer-btn" class="btn btn-primary" disabled>▶ Transfer</button>
+  </div>
+
+</div><!-- #main-screen -->
+
+<!-- ── Transfer modal ───────────────────────────────────────────────────────── -->
+<div id="transfer-modal" class="modal hidden">
+  <div class="modal-card">
+
+    <!-- In-progress -->
+    <div id="modal-progress">
+      <div class="modal-title">Transferring files…</div>
+
+      <div class="xfr-file-row">
+        <span class="muted" style="font-size:11px">Current file</span>
+        <span id="xfr-current" class="xfr-current">—</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="xfr-file-bar" style="width:0%"></div>
+      </div>
+
+      <div class="xfr-stats-row">
+        <span id="xfr-count"  class="muted">0 / 0 files</span>
+        <span id="xfr-speed"  class="muted"></span>
+      </div>
+
+      <div class="xfr-label muted">Overall</div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="xfr-overall-bar" style="width:0%"></div>
+      </div>
+      <div class="xfr-stats-row">
+        <span id="xfr-bytes" class="muted">—</span>
+      </div>
+
+      <div class="modal-actions">
+        <button id="xfr-cancel-btn" class="btn btn-danger">✕ Cancel</button>
+      </div>
+    </div>
+
+    <!-- Complete -->
+    <div id="modal-complete" class="hidden">
+      <div class="modal-title success-text">✓ Transfer Complete!</div>
+      <div class="stat-grid">
+        <span class="muted">Files transferred</span> <strong id="cmp-count">—</strong>
+        <span class="muted">Total size</span>        <strong id="cmp-size">—</strong>
+        <span class="muted" id="cmp-skip-lbl">Skipped</span>   <span id="cmp-skipped">—</span>
+        <span class="muted" id="cmp-err-lbl">Errors</span>     <span id="cmp-errors"  class="error-text">—</span>
+        <span class="muted">Saved to</span>          <code id="cmp-dest" class="dest-code">—</code>
+      </div>
+      <div class="modal-actions">
+        <button id="open-dest-btn"   class="btn">📂 Open in Finder</button>
+        <button id="modal-done-btn"  class="btn btn-primary">Done</button>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div id="modal-error" class="hidden">
+      <div class="modal-title error-text">✕ Transfer Failed</div>
+      <p id="modal-error-msg" class="error-text" style="margin:12px 0 20px"></p>
+      <div class="modal-actions">
+        <button id="modal-err-close" class="btn btn-primary">Close</button>
+      </div>
+    </div>
+
+  </div><!-- .modal-card -->
+</div><!-- #transfer-modal -->
+
+<script src="app.js"></script>
+</body>
+</html>

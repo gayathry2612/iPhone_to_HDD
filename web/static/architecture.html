@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>iPhone Transfer — Architecture</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #21262d;
+      --border: #30363d;
+      --accent: #58a6ff;
+      --green: #3fb950;
+      --orange: #f0883e;
+      --purple: #bc8cff;
+      --red: #f85149;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --iphone: #1c6ef3;
+      --mac: #2ea043;
+      --protocol: #d29922;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      padding: 40px 24px 60px;
+    }
+
+    /* ── Header ─────────────────────────────────────────────────────── */
+    .page-header {
+      text-align: center;
+      margin-bottom: 56px;
+    }
+    .page-header h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -0.5px;
+    }
+    .page-header p {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 1.05rem;
+      max-width: 640px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.6;
+    }
+
+    /* ── Section titles ─────────────────────────────────────────────── */
+    .section-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    /* ── Problem section ────────────────────────────────────────────── */
+    .problem-section {
+      max-width: 860px;
+      margin: 0 auto 56px;
+    }
+    .problem-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+    }
+    .problem-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-top: 3px solid var(--red);
+      border-radius: 10px;
+      padding: 20px 18px;
+    }
+    .problem-card .icon { font-size: 1.6rem; margin-bottom: 10px; }
+    .problem-card h3 { font-size: 0.9rem; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+    .problem-card p { font-size: 0.82rem; color: var(--muted); line-height: 1.55; }
+
+    /* ── Solution overview ──────────────────────────────────────────── */
+    .overview-section {
+      max-width: 980px;
+      margin: 0 auto 56px;
+    }
+
+    /* ── Main architecture diagram ──────────────────────────────────── */
+    .arch-diagram {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    /* iPhone column */
+    .col-iphone {
+      background: linear-gradient(180deg, #0d1f3c 0%, #0a1628 100%);
+      border-right: 1px solid var(--border);
+      padding: 28px 20px;
+      width: 210px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+    .col-iphone .device-icon {
+      font-size: 3.2rem;
+      filter: drop-shadow(0 0 16px rgba(88,166,255,0.4));
+    }
+    .col-iphone .device-name {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--accent);
+      text-align: center;
+    }
+
+    .fs-entry {
+      background: #0d2040;
+      border: 1px solid #1c4080;
+      border-radius: 7px;
+      padding: 8px 12px;
+      width: 100%;
+      font-size: 0.75rem;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+    .fs-entry .path { color: #79c0ff; font-weight: 600; }
+    .fs-entry .desc { color: var(--muted); margin-top: 2px; font-size: 0.7rem; }
+
+    /* Protocol column */
+    .col-protocol {
+      background: #141008;
+      border-right: 1px solid var(--border);
+      padding: 28px 16px;
+      width: 170px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+    }
+    .protocol-badge {
+      background: #2d1f00;
+      border: 1px solid #7d4c00;
+      border-radius: 8px;
+      padding: 10px 14px;
+      text-align: center;
+      width: 100%;
+    }
+    .protocol-badge .label {
+      font-size: 0.65rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .protocol-badge .name {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--orange);
+      margin: 3px 0;
+    }
+    .protocol-badge .sub {
+      font-size: 0.68rem;
+      color: #a07840;
+    }
+    .arrow-down {
+      color: var(--muted);
+      font-size: 1.1rem;
+    }
+    .usb-label {
+      font-size: 0.7rem;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    /* App layer column */
+    .col-app {
+      flex: 1;
+      background: var(--surface);
+      padding: 28px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .col-app .col-title {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .layer {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+    .layer-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .layer-title .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .layer-modules {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+    .module {
+      font-size: 0.73rem;
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      border: 1px solid transparent;
+    }
+
+    /* Destination column */
+    .col-dest {
+      background: linear-gradient(180deg, #0a1f0a 0%, #081408 100%);
+      border-left: 1px solid var(--border);
+      padding: 28px 18px;
+      width: 190px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+    .col-dest .dest-icon { font-size: 2.8rem; }
+    .col-dest .dest-name {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--green);
+      text-align: center;
+    }
+    .dest-path {
+      background: #0a200a;
+      border: 1px solid #1a4020;
+      border-radius: 7px;
+      padding: 8px 10px;
+      width: 100%;
+      font-size: 0.72rem;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      color: #7ee787;
+      text-align: center;
+      word-break: break-all;
+    }
+
+    /* ── Interfaces section ─────────────────────────────────────────── */
+    .interfaces-section {
+      max-width: 980px;
+      margin: 56px auto 0;
+    }
+    .interfaces-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .interface-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .interface-card-header {
+      padding: 16px 20px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .interface-card-header .icon { font-size: 1.5rem; }
+    .interface-card-header h3 { font-size: 0.95rem; font-weight: 700; }
+    .interface-card-header p { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+    .interface-card-body {
+      border-top: 1px solid var(--border);
+      padding: 14px 20px;
+    }
+    .feature-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+    .feature-list li {
+      font-size: 0.8rem;
+      color: var(--muted);
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      line-height: 1.4;
+    }
+    .feature-list li::before {
+      content: '→';
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .tui-card .interface-card-header { background: linear-gradient(135deg, #0d2040 0%, #141b2d 100%); }
+    .web-card .interface-card-header { background: linear-gradient(135deg, #0d200d 0%, #141d14 100%); }
+
+    /* ── Data flow ──────────────────────────────────────────────────── */
+    .flow-section {
+      max-width: 860px;
+      margin: 56px auto 0;
+    }
+    .flow-steps {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .flow-step {
+      flex: 1;
+      padding: 20px 14px;
+      text-align: center;
+      border-right: 1px solid var(--border);
+      position: relative;
+    }
+    .flow-step:last-child { border-right: none; }
+    .flow-step .step-num {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .flow-step .step-icon { font-size: 1.4rem; margin-bottom: 6px; }
+    .flow-step .step-title { font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; }
+    .flow-step .step-detail { font-size: 0.7rem; color: var(--muted); line-height: 1.4; }
+    .flow-arrow {
+      color: var(--muted);
+      font-size: 1rem;
+      padding: 0 4px;
+      flex-shrink: 0;
+    }
+
+    /* ── Stack ──────────────────────────────────────────────────────── */
+    .stack-section {
+      max-width: 860px;
+      margin: 56px auto 0;
+    }
+    .stack-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+    }
+    .stack-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 12px;
+      text-align: center;
+    }
+    .stack-card .pkg { font-size: 0.82rem; font-weight: 700; font-family: 'SF Mono', 'Fira Code', monospace; color: var(--purple); }
+    .stack-card .purpose { font-size: 0.7rem; color: var(--muted); margin-top: 4px; line-height: 1.35; }
+
+    /* ── Conflict policies ──────────────────────────────────────────── */
+    .conflict-section {
+      max-width: 860px;
+      margin: 56px auto 0;
+    }
+    .conflict-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .conflict-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 16px;
+      text-align: center;
+    }
+    .conflict-card .tag {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      padding: 3px 9px;
+      border-radius: 5px;
+      margin-bottom: 8px;
+    }
+    .conflict-card p { font-size: 0.78rem; color: var(--muted); line-height: 1.45; }
+    .skip .tag  { background: #1a2a1a; color: #7ee787; border: 1px solid #2a4a2a; }
+    .over .tag  { background: #2a1a1a; color: #f47067; border: 1px solid #4a2a2a; }
+    .ren  .tag  { background: #1a1a2a; color: #79c0ff; border: 1px solid #2a2a4a; }
+
+    /* ── Footer ─────────────────────────────────────────────────────── */
+    .page-footer {
+      text-align: center;
+      margin-top: 64px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    @media (max-width: 800px) {
+      .arch-diagram { flex-direction: column; }
+      .col-iphone, .col-protocol, .col-dest { width: 100%; border-right: none; border-left: none; border-bottom: 1px solid var(--border); }
+      .problem-grid, .interfaces-grid, .stack-grid, .conflict-grid { grid-template-columns: 1fr 1fr; }
+      .flow-steps { flex-direction: column; }
+      .flow-step { border-right: none; border-bottom: 1px solid var(--border); }
+      .flow-step:last-child { border-bottom: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Header ─────────────────────────────────────────────────────── -->
+  <header class="page-header">
+    <h1>iPhone → Mac File Transfer</h1>
+    <p>A terminal-based tool to browse and copy files from iPhone to Mac or any external HDD — no iTunes, no Finder, no GUI required.</p>
+  </header>
+
+  <!-- ── Problem ────────────────────────────────────────────────────── -->
+  <section class="problem-section">
+    <p class="section-title">Why this exists — the problem</p>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <div class="icon">🔒</div>
+        <h3>macOS hides iPhone files</h3>
+        <p>Finder shows a single "Trust" dialog and nothing more. Browsing, filtering, or batch-selecting individual files is not possible.</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">🐢</div>
+        <h3>AirDrop &amp; iCloud are slow</h3>
+        <p>Wireless transfer of hundreds of RAW photos or long 4K videos over AirDrop or iCloud takes orders of magnitude longer than direct USB.</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">💿</div>
+        <h3>Direct HDD copy is impossible</h3>
+        <p>There is no native way to copy the camera roll directly to an external hard drive in one step — no app, no Finder feature.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Architecture diagram ───────────────────────────────────────── -->
+  <section class="overview-section">
+    <p class="section-title">System architecture</p>
+    <div class="arch-diagram">
+
+      <!-- iPhone -->
+      <div class="col-iphone">
+        <div class="device-icon">📱</div>
+        <div class="device-name">iPhone<br>Media Partition</div>
+        <div class="fs-entry">
+          <div class="path">/DCIM/</div>
+          <div class="desc">Camera roll — photos, videos, screenshots</div>
+        </div>
+        <div class="fs-entry">
+          <div class="path">/PhotoData/</div>
+          <div class="desc">Album metadata &amp; thumbnails</div>
+        </div>
+        <div class="fs-entry">
+          <div class="path">/Books/</div>
+          <div class="desc">ePub &amp; PDF from Apple Books</div>
+        </div>
+        <div class="fs-entry">
+          <div class="path">App docs</div>
+          <div class="desc">iTunes File Sharing–enabled apps</div>
+        </div>
+      </div>
+
+      <!-- Protocol -->
+      <div class="col-protocol">
+        <div class="usb-label">⚡ Lightning / USB-C</div>
+        <div class="arrow-down">↕</div>
+        <div class="protocol-badge">
+          <div class="label">Protocol</div>
+          <div class="name">AFC</div>
+          <div class="sub">Apple File Conduit</div>
+        </div>
+        <div class="arrow-down">↕</div>
+        <div class="protocol-badge">
+          <div class="label">Library</div>
+          <div class="name">pymobiledevice3</div>
+          <div class="sub">Async v4+ API</div>
+        </div>
+        <div class="arrow-down">↕</div>
+        <div class="usb-label">No jailbreak needed<br>Same protocol as Finder/iTunes</div>
+      </div>
+
+      <!-- Application layers -->
+      <div class="col-app">
+        <div class="col-title">Application layers</div>
+
+        <!-- Interface layer -->
+        <div class="layer">
+          <div class="layer-title">
+            <div class="dot" style="background:#58a6ff"></div>
+            <span style="color:#58a6ff">Interface Layer</span>
+          </div>
+          <div class="layer-modules">
+            <div class="module" style="background:#0d2040;color:#79c0ff;border-color:#1c4080">Terminal TUI<br><span style="color:#8b949e;font-size:0.65rem">Textual · two-panel</span></div>
+            <div class="module" style="background:#0a200a;color:#7ee787;border-color:#1a4020">Web UI<br><span style="color:#8b949e;font-size:0.65rem">FastAPI · SSE stream</span></div>
+            <div class="module" style="background:#1a1a2a;color:#bc8cff;border-color:#2a2a4a">CLI<br><span style="color:#8b949e;font-size:0.65rem">Click · headless</span></div>
+          </div>
+        </div>
+
+        <!-- Logic layer -->
+        <div class="layer">
+          <div class="layer-title">
+            <div class="dot" style="background:#f0883e"></div>
+            <span style="color:#f0883e">Core Logic</span>
+          </div>
+          <div class="layer-modules">
+            <div class="module" style="background:#2d1f00;color:#f0883e;border-color:#7d4c00">src/afc.py<br><span style="color:#8b949e;font-size:0.65rem">listdir · walk · read_chunks</span></div>
+            <div class="module" style="background:#2d1f00;color:#f0883e;border-color:#7d4c00">src/transfer.py<br><span style="color:#8b949e;font-size:0.65rem">run_transfer · conflict policy</span></div>
+            <div class="module" style="background:#2d1f00;color:#f0883e;border-color:#7d4c00">src/device.py<br><span style="color:#8b949e;font-size:0.65rem">connect async · DeviceInfo</span></div>
+          </div>
+        </div>
+
+        <!-- Async runtime -->
+        <div class="layer">
+          <div class="layer-title">
+            <div class="dot" style="background:#bc8cff"></div>
+            <span style="color:#bc8cff">Async Runtime</span>
+          </div>
+          <div class="layer-modules">
+            <div class="module" style="background:#1a0d2a;color:#d2a8ff;border-color:#3a2060">asyncio event loop</div>
+            <div class="module" style="background:#1a0d2a;color:#d2a8ff;border-color:#3a2060">256 KB chunked reads</div>
+            <div class="module" style="background:#1a0d2a;color:#d2a8ff;border-color:#3a2060">SSE progress queue</div>
+            <div class="module" style="background:#1a0d2a;color:#d2a8ff;border-color:#3a2060">cancel via threading.Event</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Destination -->
+      <div class="col-dest">
+        <div class="dest-icon">💾</div>
+        <div class="dest-name">Destination</div>
+        <div class="dest-path">~/Downloads/</div>
+        <div class="dest-path">~/Desktop/</div>
+        <div class="dest-path">/Volumes/MyHDD/</div>
+        <div style="font-size:0.7rem;color:var(--muted);text-align:center;line-height:1.5">exFAT · APFS · HFS+<br>Any mounted volume</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── Interface cards ────────────────────────────────────────────── -->
+  <section class="interfaces-section">
+    <p class="section-title">Two ways to use it</p>
+    <div class="interfaces-grid">
+
+      <div class="interface-card tui-card">
+        <div class="interface-card-header">
+          <div class="icon">⌨️</div>
+          <div>
+            <h3>Interactive TUI</h3>
+            <p>python main.py</p>
+          </div>
+        </div>
+        <div class="interface-card-body">
+          <ul class="feature-list">
+            <li>Two-panel browser — iPhone on left, destination on right</li>
+            <li>Checkbox selection for individual files and whole folders</li>
+            <li>SPACE to toggle, A to select all in current directory</li>
+            <li>Live progress bar — per-file and overall</li>
+            <li>Tab to switch panels, T to start, Esc to cancel</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="interface-card web-card">
+        <div class="interface-card-header">
+          <div class="icon">🌐</div>
+          <div>
+            <h3>Web UI</h3>
+            <p>http://127.0.0.1:8765</p>
+          </div>
+        </div>
+        <div class="interface-card-body">
+          <ul class="feature-list">
+            <li>Dark-themed browser interface — works from any device on the LAN</li>
+            <li>FastAPI backend with Server-Sent Events progress streaming</li>
+            <li>Click-to-navigate iPhone filesystem and local destinations</li>
+            <li>Real-time transfer progress with file count and byte speed</li>
+            <li>Cancel button, Open in Finder shortcut</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── Data flow ──────────────────────────────────────────────────── -->
+  <section class="flow-section">
+    <p class="section-title">Data flow — connect to copy</p>
+    <div class="flow-steps">
+      <div class="flow-step">
+        <div class="step-num">Step 1</div>
+        <div class="step-icon">🔌</div>
+        <div class="step-title">Plug in iPhone</div>
+        <div class="step-detail">Lightning or USB-C cable; unlock device and tap "Trust This Computer"</div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">Step 2</div>
+        <div class="step-icon">🤝</div>
+        <div class="step-title">Pair via usbmux</div>
+        <div class="step-detail">pymobiledevice3 creates a lockdown session over the USB tunnel</div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">Step 3</div>
+        <div class="step-icon">📂</div>
+        <div class="step-title">Browse via AFC</div>
+        <div class="step-detail">AfcService streams directory listings and file metadata asynchronously</div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">Step 4</div>
+        <div class="step-icon">☑️</div>
+        <div class="step-title">Select files</div>
+        <div class="step-detail">Pick individual files, folders, or everything — selection shown with size totals</div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">Step 5</div>
+        <div class="step-icon">⚡</div>
+        <div class="step-title">Transfer</div>
+        <div class="step-detail">Chunked async reads (256 KB) written directly to local disk; progress streamed live</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Conflict policies ──────────────────────────────────────────── -->
+  <section class="conflict-section">
+    <p class="section-title">Conflict policies</p>
+    <div class="conflict-grid">
+      <div class="conflict-card skip">
+        <div class="tag">--conflict skip</div>
+        <p>Default. If the file already exists at the destination, skip it entirely. Safe for incremental backups.</p>
+      </div>
+      <div class="conflict-card over">
+        <div class="tag">--conflict overwrite</div>
+        <p>Replace any existing file with the iPhone version. Use when you want the latest copy unconditionally.</p>
+      </div>
+      <div class="conflict-card ren">
+        <div class="tag">--conflict rename</div>
+        <p>Keep both files. The new file gets a <code>_1</code>, <code>_2</code>, … suffix appended automatically.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Stack ──────────────────────────────────────────────────────── -->
+  <section class="stack-section">
+    <p class="section-title">Dependency stack</p>
+    <div class="stack-grid">
+      <div class="stack-card">
+        <div class="pkg">pymobiledevice3</div>
+        <div class="purpose">USB communication with iPhone via AFC protocol</div>
+      </div>
+      <div class="stack-card">
+        <div class="pkg">textual</div>
+        <div class="purpose">Terminal UI framework for the two-panel TUI</div>
+      </div>
+      <div class="stack-card">
+        <div class="pkg">fastapi</div>
+        <div class="purpose">Async HTTP backend + SSE streaming for Web UI</div>
+      </div>
+      <div class="stack-card">
+        <div class="pkg">rich</div>
+        <div class="purpose">Styled terminal output and CLI progress bars</div>
+      </div>
+      <div class="stack-card">
+        <div class="pkg">humanize</div>
+        <div class="purpose">Human-readable file sizes (MiB, GiB)</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Footer ─────────────────────────────────────────────────────── -->
+  <footer class="page-footer">
+    iPhone Transfer · No jailbreak · No iTunes · No Finder · Pure USB AFC
+  </footer>
+
+</body>
+</html>
